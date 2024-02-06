@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "InteractionKit",
-    platforms: [.iOS(.v17)],
+    platforms: [.iOS(.v17), .macOS(.v14)],
     products: [.library(name: "InteractionKit", targets: ["InteractionKit"])],
     targets: [
         .target(name: "InteractionKit"),
