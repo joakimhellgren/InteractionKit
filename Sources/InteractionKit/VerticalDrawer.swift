@@ -22,7 +22,7 @@ public extension BinaryFloatingPoint {
 }
 
 
-public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: View>: View {
+public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: View, BarStyle: ShapeStyle, ContentStyle: ShapeStyle, StrokeStyle: ShapeStyle>: View {
     private let proxy: GeometryProxy
     private let range: ClosedRange<CGFloat>
     private let preferredBarFraction: CGFloat
@@ -39,6 +39,10 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
     @ViewBuilder
     private let bottomContent: () -> BottomBarContent
     
+    private let barStyle: BarStyle
+    private let contentStyle: ContentStyle
+    private let strokeStyle: StrokeStyle
+    
     @State
     private var currentHeight: CGFloat = .zero
     
@@ -52,16 +56,28 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
         in proxy: GeometryProxy,
         contentFraction range: ClosedRange<CGFloat> = 0...0.5,
         barFraction: CGFloat = 0.15,
+        barStyle: BarStyle = .bar,
+        contentStyle: ContentStyle = .regularMaterial,
+        strokeStyle: StrokeStyle = .quinary,
         @ViewBuilder topContent: @escaping () -> TopBarContent,
         @ViewBuilder mainContent: @escaping () -> MainContent,
         @ViewBuilder bottomContent: @escaping () -> BottomBarContent
     ) {
         self.proxy = proxy
+        self.range = range
+        self.preferredBarFraction = barFraction
+        
+        self.barStyle = barStyle
+        self.contentStyle = contentStyle
+        self.strokeStyle = strokeStyle
+        
         self.topContent = topContent
         self.mainContent = mainContent
         self.bottomContent = bottomContent
-        self.range = range
-        self.preferredBarFraction = barFraction
+    }
+    
+    private var size: CGSize {
+        proxy.size
     }
     
     private var contentOpacity: CGFloat {
@@ -80,52 +96,52 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
     private let borderWidth = 0.5
     private let cornerRadius = 8.0
     
-    private var size: CGSize { proxy.size }
     public var body: some View {
+        VStack(spacing: spacing) {
+            Spacer()
+            topContent()
+                .zIndex(1)
+                .frame(width: size.width, height: preferredBarHeight(in: size))
+                .background(barStyle)
+                .overlay(RoundedCornerShape(
+                    corners: [.topLeft, .topRight],
+                    radius: cornerRadius
+                ).stroke(
+                    strokeStyle,
+                    lineWidth: borderWidth
+                ))
+                .clipShape(RoundedCornerShape(
+                    corners: [.topLeft, .topRight],
+                    radius: cornerRadius
+                ))
+                .overlay(
+                    alignment: .top,
+                    content: { dragIndicator(in: size) }
+                )
             VStack(spacing: spacing) {
-                Spacer()
-                topContent()
+                mainContent()
+                    .frame(maxWidth: size.width, maxHeight: currentHeight)
+                    .opacity(contentOpacity)
+                    .background(
+                            Rectangle()
+                                .fill(contentStyle)
+                                .frame(minHeight: contentStyle is Material ? 3 : 0)
+                    )
+                bottomContent()
                     .zIndex(1)
-                    .padding(.horizontal)
-                    .frame(maxWidth: .infinity ,maxHeight: preferredBarHeight(in: size))
-                    .background(.bar)
+                    .frame(width: size.width, height: preferredBarHeight(in: size))
+                    .background(barStyle)
                     .overlay(RoundedCornerShape(
-                        corners: [.topLeft, .topRight],
+                        corners: [.bottomLeft, .bottomRight],
                         radius: cornerRadius
                     ).stroke(
-                        indicatorColor,
+                        strokeStyle.opacity(contentOpacity),
                         lineWidth: borderWidth
-                    ))
-                    .clipShape(RoundedCornerShape(
-                        corners: [.topLeft, .topRight],
-                        radius: cornerRadius
-                    ))
-                    .overlay(
-                        alignment: .top,
-                        content: { dragIndicator(in: size) }
-                    )
-                
-                VStack(spacing: spacing) {
-                    mainContent()
-                        .frame(maxWidth: size.width, maxHeight: currentHeight)
-                        .opacity(contentOpacity)
-                        .background(.ultraThinMaterial)
-                    bottomContent()
-                        .zIndex(1)
-                        .padding(.horizontal)
-                        .frame(maxWidth: .infinity, maxHeight: preferredBarHeight(in: size))
-                        .background(.bar, ignoresSafeAreaEdges: .bottom)
-                        .overlay(RoundedCornerShape(
-                            corners: [.bottomLeft, .bottomRight],
-                            radius: cornerRadius
-                        ).stroke(
-                            indicatorColor.opacity(contentOpacity),
-                            lineWidth: borderWidth
-                        ).ignoresSafeArea(edges: .bottom))
-                }
-                
+                    ).ignoresSafeArea(edges: .bottom))
             }
-            .task { resetSheet(in: size) }
+            
+        }
+        .task { resetSheet(in: size) }
     }
     
     private func preferredBarHeight(in size: CGSize) -> CGFloat {
@@ -135,7 +151,7 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
     private func dragIndicator(in size: CGSize) -> some View {
         Capsule()
             .fill(.bar)
-            .strokeBorder(indicatorColor, lineWidth: borderWidth)
+            .strokeBorder(strokeStyle, lineWidth: borderWidth)
             .frame(width: 22, height: 6)
             .offset(y: -3)
             .contentShape(Rectangle())
@@ -157,10 +173,6 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
                 }
             }
             .updating($isDragging) { _, newState, _ in newState = true }
-    }
-    
-    private var indicatorColor: some ShapeStyle {
-        colorScheme == .light ? .quaternary : .quinary
     }
     
     private func resetSheet(in size: CGSize) {
