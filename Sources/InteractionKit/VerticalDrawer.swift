@@ -1,7 +1,7 @@
 import SwiftUI
 import Foundation
 
-extension BinaryFloatingPoint {
+public extension BinaryFloatingPoint {
     /// Returns normalized value for the range between `a` and `b`
     /// - Parameters:
     ///   - min: minimum range of measurement
@@ -22,7 +22,7 @@ extension BinaryFloatingPoint {
 }
 
 
-struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: View>: View {
+public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: View>: View {
     private let range: ClosedRange<CGFloat>
     private let preferredBarFraction: CGFloat
     
@@ -47,7 +47,7 @@ struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: 
     @GestureState
     private var isDragging = false
     
-    init(
+    public init(
         contentFraction range: ClosedRange<CGFloat> = 0...0.5,
         barFraction: CGFloat = 0.15,
         @ViewBuilder topContent: @escaping () -> TopBarContent,
@@ -79,7 +79,7 @@ struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: 
     private let minBarHeight = 12.0
     private let maxBarHeight = 44.0
     
-    var body: some View {
+    public var body: some View {
         GeometryReader {
             let size = $0.size
             VStack(spacing: spacing) {
