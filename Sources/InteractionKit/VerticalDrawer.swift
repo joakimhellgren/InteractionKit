@@ -170,23 +170,3 @@ struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: 
     }
 }
 
-
-#Preview {
-    VerticalDrawer(
-        topContent: {
-            HStack {
-                Text("Top bar")
-            }
-        },
-        mainContent: {
-            Text("Content goes here")
-                
-        },
-        bottomContent: {
-            HStack {
-                Text("Bottom bar")
-            }
-        }
-    )
-    .foregroundStyle(.secondary)
-}
