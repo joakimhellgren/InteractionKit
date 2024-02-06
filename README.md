@@ -1,20 +1,32 @@
-# InteractionKit
+<h1> InteractionKit</h1>
 
-## VerticalDrawer usage:
+<p>
+    <img src="https://img.shields.io/badge/iOS-17.0+-blue.svg" />
+    <img src="https://img.shields.io/badge/macOS-14.0+-orange.svg" />
+    <img src="https://img.shields.io/badge/-SwiftUI-red.svg" />
+</p>
+
+InteractionKit is a collection of UI components initially intended for live performances on iOS and macOS.
+
+## Installation
+
+1. Select File -> Add Packages...
+2. Click the `+` icon on the bottom left of the Collections sidebar on the left.
+3. Choose `Add Swift Package Collection` from the pop-up menu.
+4. In the `Add Package Collection` dialog box, enter `https://github.com/joakimhellgren/InteractionKit.git` as the URL and click the "Load" button.
+
+## Examples
+
+### Vertical drawer - inspired by Logic Pro's keyboard sheet. 
 
 ```swift
-GeometryReader { proxy in
+GeometryReader {
     Color.mint.grayscale(0.85)
     VerticalDrawer(
-        in: proxy,
-        contentFraction: 0...1,
-        barFraction: 0.09,
-        barStyle: .bar,
-        contentStyle: .regularMaterial,
-        strokeStyle: .tertiary,
+        in: $0,
         topContent: { Text("Placeholder #1") },
-        mainContent: { Text("Placeholder #2") },
+        mainContent: { Text("Placeholder #1") },
         bottomContent: { Text("Placeholder #3") }
     )
-}    
+}   
 ```
