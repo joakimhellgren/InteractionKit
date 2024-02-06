@@ -148,7 +148,7 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
             .onChanged { gesture in
                 if isDragging {
                     let minHeight = max(0, size.height * range.lowerBound)
-                    let maxHeight = size.height * range.upperBound
+                    let maxHeight = (size.height * range.upperBound) - (preferredBarHeight(in: size)*2)
                     let yDistance = previousHeight - gesture.translation.height
                     let height = min(max(minHeight, yDistance), maxHeight)
                     currentHeight = max(0, height)
