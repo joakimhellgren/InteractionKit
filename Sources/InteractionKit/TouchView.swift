@@ -94,14 +94,14 @@ public struct TouchViewRepresentable<T: View>: UIViewRepresentable {
 
 public class TouchIndicatorGestureRecognizer: UIGestureRecognizer {
     private static var maxNumberOfTouches: Int = 32
-    // MARK: - Properties
+    
+    public weak var touchDelegate: TouchDelegate?
+    
     public var tintColor: UIColor = .tintColor
     public var showTouches: Bool = true
     
     private var touchBubbles = [UITouch : UIView]()
     private var currentTouches = NSMutableSet(capacity: Int(maxNumberOfTouches))
-    
-    public weak var touchDelegate: TouchDelegate?
     
     private func updateDelegate() {
         if let touches = currentTouches.allObjects as? [UITouch] {
