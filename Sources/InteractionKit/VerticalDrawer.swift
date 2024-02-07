@@ -1,5 +1,4 @@
 import SwiftUI
-import Foundation
 
 public extension BinaryFloatingPoint {
     /// Returns normalized value for the range between `a` and `b`
@@ -14,33 +13,24 @@ public extension BinaryFloatingPoint {
 }
 
 
-public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: View, BarStyle: ShapeStyle, ContentStyle: ShapeStyle, StrokeStyle: ShapeStyle>: View {
+public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarContent: View,
+                             BarStyle: ShapeStyle, ContentStyle: ShapeStyle, StrokeStyle: ShapeStyle>: View {
     private let proxy: GeometryProxy
     
-    private let preferredContentFraction: CGFloat
-    private let preferredBarFraction: CGFloat
-    
-    @ViewBuilder
-    private let topContent: () -> TopBarContent
-    
-    @ViewBuilder
-    private let mainContent: () -> MainContent
-    
-    @ViewBuilder
-    private let bottomContent: () -> BottomBarContent
+    private let contentFraction: CGFloat
+    private let barFraction: CGFloat
     
     private let barStyle: BarStyle
     private let contentStyle: ContentStyle
     private let strokeStyle: StrokeStyle
     
-    @State
-    private var currentHeight: CGFloat = .zero
+    @ViewBuilder private let topContent: () -> TopBarContent
+    @ViewBuilder private let mainContent: () -> MainContent
+    @ViewBuilder private let bottomContent: () -> BottomBarContent
     
-    @State
-    private var previousHeight: CGFloat = .zero
-    
-    @GestureState
-    private var isDragging = false
+    @State private var currentHeight: CGFloat
+    @State private var previousHeight: CGFloat
+    @GestureState private var isDragging = false
     
     public init(
         in proxy: GeometryProxy,
@@ -54,8 +44,8 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
         @ViewBuilder bottomContent: @escaping () -> BottomBarContent
     ) {
         self.proxy = proxy
-        self.preferredContentFraction = contentFraction
-        self.preferredBarFraction = barFraction
+        self.contentFraction = contentFraction
+        self.barFraction = barFraction
         
         self.barStyle = barStyle
         self.contentStyle = contentStyle
@@ -64,6 +54,10 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
         self.topContent = topContent
         self.mainContent = mainContent
         self.bottomContent = bottomContent
+        
+        let height = proxy.size.height * contentFraction
+        self._currentHeight = State(wrappedValue: height)
+        self._previousHeight = State(wrappedValue: height)
     }
     
     private var size: CGSize {
@@ -135,7 +129,7 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
     }
     
     private func preferredBarHeight(in size: CGSize) -> CGFloat {
-        (size.height * preferredContentFraction) * preferredBarFraction
+        (size.height * contentFraction) * barFraction
     }
     
     private func dragIndicator(in size: CGSize) -> some View {
@@ -153,7 +147,7 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
         DragGesture(minimumDistance: 0, coordinateSpace: .global)
             .onChanged { gesture in
                 if isDragging {
-                    let maxHeight = (size.height * preferredContentFraction) - (preferredBarHeight(in: size)*2)
+                    let maxHeight = (size.height * contentFraction) - (preferredBarHeight(in: size)*2)
                     let yDistance = previousHeight - gesture.translation.height
                     let height = min(max(0, yDistance), maxHeight)
                     currentHeight = height
@@ -165,7 +159,7 @@ public struct VerticalDrawer<TopBarContent: View, MainContent: View, BottomBarCo
     }
     
     private func resetSheet(in size: CGSize) {
-        currentHeight = size.height * preferredContentFraction
+        currentHeight = size.height * contentFraction
     }
 }
 
