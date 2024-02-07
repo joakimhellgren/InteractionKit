@@ -6,26 +6,63 @@ public protocol TouchDelegate: AnyObject {
     var touches: [CGPoint] { get set }
 }
 
-public struct TouchView<T: View>: UIViewRepresentable {
-    public weak var touchDelegate: TouchDelegate?
-    let view: UIViewType
-    let tintColor: UIColor
-    let showTouches: Bool
+public struct TouchView<T: TouchDelegate, Content: View>: View {
+    private let delegate: T
+    private let tintColor: UIColor
+    private let showTouches: Bool
+    
+    @ViewBuilder
+    private let content: (GeometryProxy) -> Content
     
     public init(
-        touchDelegate: TouchDelegate? = nil,
+        delegate: T,
         tintColor: UIColor = .tintColor,
         showTouches: Bool = true,
+        @ViewBuilder content: @escaping (GeometryProxy) -> Content
+    ) {
+        self.delegate = delegate
+        self.tintColor = tintColor
+        self.showTouches = showTouches
+        self.content = content
+    }
+    
+    public var body: some View {
+        TouchViewRepresentable(
+            delegate: delegate,
+            tintColor: tintColor,
+            showTouches: showTouches,
+            content: {
+                GeometryReader { proxy in
+                    ZStack {
+                        content(proxy)
+                    }
+                }
+            }
+        )
+    }
+}
+
+public struct TouchViewRepresentable<T: View>: UIViewRepresentable {
+    private let delegate: TouchDelegate
+    private let view: UIViewType
+    private let tintColor: UIColor
+    private let showTouches: Bool
+    private let touchIndicator: TouchIndicatorGestureRecognizer
+    
+    public init(
+        delegate: TouchDelegate,
+        tintColor: UIColor,
+        showTouches: Bool,
         @ViewBuilder content: () -> T
     ) {
         self.view = UIHostingController(rootView: content()).view
         self.tintColor = tintColor
         self.showTouches = showTouches
-        self.touchDelegate = touchDelegate
+        self.delegate = delegate
+        self.touchIndicator = TouchIndicatorGestureRecognizer(target: view, action: nil)
     }
     
     public func makeUIView(context: Context) -> UIView {
-        let touchIndicator = TouchIndicatorGestureRecognizer(target: view, action: nil)
         touchIndicator.showTouches = showTouches
         touchIndicator.tintColor = tintColor
         touchIndicator.touchDelegate = context.coordinator
@@ -34,15 +71,19 @@ public struct TouchView<T: View>: UIViewRepresentable {
         return view
     }
     
-    public func updateUIView(_ uiView: UIView, context: Context) {}
+    public func updateUIView(_ uiView: UIView, context: Context) {
+        touchIndicator.showTouches = showTouches
+        touchIndicator.tintColor = tintColor
+    }
+    
     public func makeCoordinator() -> Coordinator { Coordinator(self) }
     
     public class Coordinator: NSObject, UIGestureRecognizerDelegate, TouchDelegate {
-        var parent: TouchView
+        var parent: TouchViewRepresentable
         public var touches = [CGPoint]() {
-            didSet { parent.touchDelegate?.touches = touches }
+            didSet { parent.delegate.touches = touches }
         }
-        public init(_ parent: TouchView) {
+        public init(_ parent: TouchViewRepresentable) {
             self.parent = parent
         }
         public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -52,13 +93,13 @@ public struct TouchView<T: View>: UIViewRepresentable {
 }
 
 public class TouchIndicatorGestureRecognizer: UIGestureRecognizer {
-    private static var maxNumberOfKeys: Int = 32
+    private static var maxNumberOfTouches: Int = 32
     // MARK: - Properties
     public var tintColor: UIColor = .tintColor
     public var showTouches: Bool = true
     
-    private var activeTouches = [UITouch : UIView]()
-    private var currentTouches = NSMutableSet(capacity: Int(maxNumberOfKeys))
+    private var touchBubbles = [UITouch : UIView]()
+    private var currentTouches = NSMutableSet(capacity: Int(maxNumberOfTouches))
     
     public weak var touchDelegate: TouchDelegate?
     
@@ -69,14 +110,10 @@ public class TouchIndicatorGestureRecognizer: UIGestureRecognizer {
         }
     }
     
-    // MARK: - Init
-    
     public override init(target: Any?, action: Selector?) {
         super.init(target: target, action: action)
         cancelsTouchesInView = false
     }
-    
-    // MARK: - Override
     
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesBegan(touches, with: event)
@@ -122,8 +159,6 @@ public class TouchIndicatorGestureRecognizer: UIGestureRecognizer {
         updateDelegate()
     }
     
-    // MARK: - Indicator
-    
     private class func indicator(color: UIColor) -> UIView {
         let indicator = UIView(frame: CGRect(x: 0, y: 0,
                                              width: 66.0,
@@ -144,7 +179,7 @@ public class TouchIndicatorGestureRecognizer: UIGestureRecognizer {
         
         if let gestureView = view {
             gestureView.addSubview(indicator)
-            activeTouches[touch] = indicator
+            touchBubbles[touch] = indicator
         }
         
         UIView.animate(withDuration: 0.2, delay: 0,
@@ -155,22 +190,22 @@ public class TouchIndicatorGestureRecognizer: UIGestureRecognizer {
     }
     
     private func moveIndicatorView(_ touch: UITouch) {
-        if let indicator = activeTouches[touch] {
+        if let indicator = touchBubbles[touch] {
             indicator.center = touch.location(in: view)
             state = .changed
         }
     }
     
     private func removeIndicatorView(_ touch: UITouch) {
-        if let indicator = activeTouches[touch] {
+        if let indicator = touchBubbles[touch] {
             UIView.animate(withDuration: 0.2, delay: 0,
                            usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
                            options: .allowUserInteraction, animations: { () -> Void in
                 indicator.transform = CGAffineTransform(scaleX: 0.01, y: 0.01)
             }, completion: { (finished) -> Void in
                 indicator.removeFromSuperview()
-                self.activeTouches.removeValue(forKey: touch)
-                if self.activeTouches.count == 0 {
+                self.touchBubbles.removeValue(forKey: touch)
+                if self.touchBubbles.count == 0 {
                     self.state = .ended
                 }
             })
