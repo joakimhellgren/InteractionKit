@@ -17,7 +17,7 @@ InteractionKit is a collection of UI components initially intended for live perf
 
 ## Examples
 
-### Vertical drawer - inspired by Logic Pro's keyboard sheet. 
+### VerticalDrawer - inspired by Logic Pro's keyboard sheet. 
 
 ```swift
 GeometryReader {
@@ -28,5 +28,13 @@ GeometryReader {
         mainContent: { Text("Placeholder #1") },
         bottomContent: { Text("Placeholder #3") }
     )
-}   
+}
+```
+
+### TouchView - Multi-touch in SwiftUI context.
+
+```swift
+TouchView {
+    Color.mint.grayscale(0.85)
+}
 ```
