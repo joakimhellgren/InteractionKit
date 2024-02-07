@@ -38,3 +38,12 @@ TouchView {
     Color.mint.grayscale(0.85)
 }
 ```
+
+### MomentaryButton - A momentary logic gate commonly found in modular synthesizer systems
+
+```swift
+@State var isOn = false
+MomentaryButton(isOn: $isOn) {
+    Circle().fill(isOn ? .green : .orange)
+}
+``` 
