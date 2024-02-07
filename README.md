@@ -31,11 +31,29 @@ GeometryReader {
 }
 ```
 
-### TouchView - Multi-touch in SwiftUI context.
+### TouchView - Multi-touch tracking within view stacks for SwiftUI.
 
 ```swift
-TouchView {
-    Color.mint.grayscale(0.85)
+@Observable final class Model: TouchDelegate {
+    var touches = [CGPoint]()
+}
+
+struct TouchViewExample: View {
+    @State private var model = Model()
+    
+    var body: some View {
+        TouchView(delegate: model,
+                  tintColor: .green, // Optional
+                  showTouches: true, // Optional
+                  content: { proxy in
+            let animationValue = !model.touches.isEmpty
+            let touchCount = model.touches.count.description
+            Color.mint.grayscale(animationValue ? 0.25 : 0.85)
+                .animation(.snappy, value: animationValue)
+            Text("Registered touches\n\(touchCount)")
+                .multilineTextAlignment(.center)
+        })
+    }
 }
 ```
 
